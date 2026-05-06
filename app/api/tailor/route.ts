@@ -146,6 +146,14 @@ function fallbackTailor({ jobDescription, oldCv, version = defaultVersion }: Tai
   };
 }
 
+function limitText(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, Math.floor(maxLength * 0.72))}\n\n[Middle content shortened for fast analysis]\n\n${value.slice(-Math.floor(maxLength * 0.28))}`;
+}
+
 function asStrings(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
@@ -201,14 +209,19 @@ export async function POST(request: Request) {
     );
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
+
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
+    signal: controller.signal,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${openAIKey}`
     },
     body: JSON.stringify({
-      model: "gpt-4.1-mini",
+      model: "gpt-4.1-nano",
+      max_output_tokens: 1500,
       input: [
         {
           role: "system",
@@ -245,8 +258,8 @@ export async function POST(request: Request) {
             },
             mode: payload.mode || "ATS-friendly",
             version,
-            jobDescription,
-            oldCv,
+            jobDescription: limitText(jobDescription, 6500),
+            oldCv: limitText(oldCv, 8500),
             constraints: [
               "Do not invent fake companies, degrees, dates, or experience.",
               "If information is missing, place it in suggestions, not in the CV content.",
@@ -257,10 +270,27 @@ export async function POST(request: Request) {
         }
       ]
     })
+  }).catch((error) => {
+    if (error instanceof Error && error.name === "AbortError") {
+      return null;
+    }
+    throw error;
   });
 
+  clearTimeout(timeout);
+
+  if (!response) {
+    return NextResponse.json({
+      ...fallbackTailor({ ...payload, version }),
+      warning: "AI generation took too long, so a fast ATS analysis was generated. Try again for a deeper AI rewrite."
+    });
+  }
+
   if (!response.ok) {
-    return NextResponse.json({ error: "AI tailoring failed. Please try again.", fallback: fallbackTailor({ ...payload, version }) }, { status: 502 });
+    return NextResponse.json({
+      ...fallbackTailor({ ...payload, version }),
+      warning: "AI generation failed, so a fast ATS analysis was generated. Please try again for a deeper AI rewrite."
+    });
   }
 
   const data = await response.json();
@@ -269,6 +299,9 @@ export async function POST(request: Request) {
   try {
     return NextResponse.json(normalizeResult(parseJsonText(content || ""), version));
   } catch {
-    return NextResponse.json({ error: "AI response could not be parsed. Please try again.", fallback: fallbackTailor({ ...payload, version }) }, { status: 502 });
+    return NextResponse.json({
+      ...fallbackTailor({ ...payload, version }),
+      warning: "AI response could not be parsed, so a fast ATS analysis was generated. Please try again for a deeper AI rewrite."
+    });
   }
 }

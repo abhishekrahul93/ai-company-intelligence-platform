@@ -236,14 +236,19 @@ export default function TailorPage() {
     }
 
     setMode(selectedMode);
+    setNotice("Generating your tailored CV. This can take 15-30 seconds for a full CV.");
     setIsGenerating(true);
 
     try {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 45000);
       const response = await fetch("/api/tailor", {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobDescription, oldCv, mode: selectedMode, version: selectedVersion })
       });
+      window.clearTimeout(timeout);
       const data = await response.json();
 
       if (!response.ok) {
@@ -253,6 +258,11 @@ export default function TailorPage() {
       }
 
       setResult(data);
+      if (data.warning) {
+        setNotice(data.warning);
+      }
+    } catch (generateError) {
+      setError(generateError instanceof DOMException && generateError.name === "AbortError" ? "Generation took too long. Please try again, or shorten the job description/CV text." : "Generation failed. Please check your connection and try again.");
     } finally {
       setIsGenerating(false);
     }
