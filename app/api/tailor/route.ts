@@ -292,9 +292,13 @@ export async function POST(request: Request) {
     }
 
     if (!response.ok) {
+      const authWarning =
+        response.status === 401
+          ? "OpenAI rejected the API key in Vercel. Replace OPENAI_API_KEY in Vercel Environment Variables, then redeploy."
+          : `AI generation failed with OpenAI status ${response.status}.`;
       return NextResponse.json({
         ...fallbackTailor({ ...payload, version }),
-        warning: "AI generation failed, so a fast ATS analysis was generated. Please try again for a deeper AI rewrite."
+        warning: `${authWarning} A fast ATS analysis was generated instead.`
       });
     }
 
