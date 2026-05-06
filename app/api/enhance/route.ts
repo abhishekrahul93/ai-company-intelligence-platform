@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 type EnhanceRequest = {
   role: string;
@@ -54,10 +56,56 @@ function localEnhance({ role, summary, experience }: EnhanceRequest): EnhancedRe
   };
 }
 
+function extractResponseText(data: {
+  output_text?: string;
+  output?: Array<{
+    content?: Array<{
+      text?: string;
+    }>;
+  }>;
+}) {
+  if (data.output_text) {
+    return data.output_text;
+  }
+
+  return data.output?.flatMap((item) => item.content || []).find((content) => content.text)?.text;
+}
+
+function parseJsonText(content: string) {
+  const cleaned = content
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "");
+
+  return JSON.parse(cleaned);
+}
+
+function getOpenAIKey() {
+  if (process.env.NODE_ENV === "production") {
+    return process.env.OPENAI_API_KEY || "";
+  }
+
+  const envPath = join(process.cwd(), ".env.local");
+  if (existsSync(envPath)) {
+    const line = readFileSync(envPath, "utf8")
+      .split(/\r?\n/)
+      .find((item) => item.startsWith("OPENAI_API_KEY="));
+
+    const localKey = line?.replace("OPENAI_API_KEY=", "").trim();
+    if (localKey) {
+      return localKey;
+    }
+  }
+
+  return process.env.OPENAI_API_KEY || "";
+}
+
 export async function POST(request: Request) {
   const payload = (await request.json()) as EnhanceRequest;
+  const openAIKey = getOpenAIKey();
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!openAIKey) {
     return NextResponse.json(localEnhance(payload));
   }
 
@@ -65,7 +113,7 @@ export async function POST(request: Request) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      Authorization: `Bearer ${openAIKey}`
     },
     body: JSON.stringify({
       model: "gpt-4.1-mini",
@@ -79,12 +127,7 @@ export async function POST(request: Request) {
           role: "user",
           content: JSON.stringify(payload)
         }
-      ],
-      text: {
-        format: {
-          type: "json_object"
-        }
-      }
+      ]
     })
   });
 
@@ -93,10 +136,10 @@ export async function POST(request: Request) {
   }
 
   const data = await response.json();
-  const content = data.output_text;
+  const content = extractResponseText(data);
 
   try {
-    return NextResponse.json(JSON.parse(content));
+    return NextResponse.json(parseJsonText(content || ""));
   } catch {
     return NextResponse.json(localEnhance(payload));
   }
