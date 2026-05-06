@@ -63,6 +63,12 @@ type AgentMessage = {
   applyText?: string;
 };
 
+type UploadedCv = {
+  name: string;
+  size: number;
+  text: string;
+};
+
 const languages = ["English", "German", "French", "Spanish", "Italian", "Dutch", "Arabic", "Hindi"];
 const formats = ["Global ATS Resume", "European CV", "German Lebenslauf", "UK CV", "US Resume", "Executive CV", "Creative CV", "Entry-Level CV"];
 const tones = ["Professional", "Modern", "Executive", "Friendly", "Concise"];
@@ -140,6 +146,8 @@ function draftFromResult(result: TailorResult, jobDescription: string): Partial<
 export default function TailorPage() {
   const [jobDescription, setJobDescription] = useState("");
   const [oldCv, setOldCv] = useState("");
+  const [uploadedCv, setUploadedCv] = useState<UploadedCv | null>(null);
+  const [showExtractedCv, setShowExtractedCv] = useState(false);
   const [version, setVersion] = useState<CvVersion>(defaultVersion);
   const [mode, setMode] = useState(enhancerModes[0]);
   const [result, setResult] = useState<TailorResult | null>(null);
@@ -212,13 +220,23 @@ export default function TailorPage() {
         return;
       }
 
-      setOldCv(imported.rawText || [imported.summary, imported.experience, imported.skills].filter(Boolean).join("\n\n"));
-      setNotice("CV imported. Choose a CV version, paste the job description, then generate.");
+      const extractedText = imported.rawText || [imported.summary, imported.experience, imported.skills].filter(Boolean).join("\n\n");
+      setOldCv(extractedText);
+      setUploadedCv({ name: file.name, size: file.size, text: extractedText });
+      setShowExtractedCv(false);
+      setNotice("PDF uploaded successfully. Choose a CV version, paste the job description, then generate.");
     } catch (importError) {
       setError(importError instanceof DOMException && importError.name === "AbortError" ? "CV import took too long. Please try a smaller PDF or upload a DOCX/TXT version." : "Could not upload this CV. Please try again or use DOCX/TXT.");
     } finally {
       setIsImporting(false);
     }
+  }
+
+  function clearUploadedCv() {
+    setOldCv("");
+    setUploadedCv(null);
+    setShowExtractedCv(false);
+    setNotice("");
   }
 
   async function generateTailoredCv(selectedMode = mode, selectedVersion = version) {
@@ -384,11 +402,31 @@ export default function TailorPage() {
             <div className="cardHeader">
               <div><p className="eyebrow">Step 2</p><h2>Old CV</h2></div>
               <label className="miniUpload">
-                {isImporting ? "Importing..." : "Upload CV"}
-                <input type="file" accept=".pdf,.docx,.txt" disabled={isImporting} onChange={(event) => { void importCv(event.target.files?.[0]); event.target.value = ""; }} />
+                {isImporting ? "Importing..." : uploadedCv ? "Replace PDF" : "Upload PDF"}
+                <input type="file" accept=".pdf,application/pdf" disabled={isImporting} onChange={(event) => { void importCv(event.target.files?.[0]); event.target.value = ""; }} />
               </label>
             </div>
-            <textarea className="largeTextarea" value={oldCv} onChange={(event) => setOldCv(event.target.value)} placeholder="Paste your existing CV here, or upload a PDF, DOCX, or TXT file." rows={12} />
+            {uploadedCv ? (
+              <div className="uploadedCvCard">
+                <div className="pdfIcon">PDF</div>
+                <div>
+                  <strong>{uploadedCv.name}</strong>
+                  <p>{Math.max(1, Math.round(uploadedCv.size / 1024))} KB · {uploadedCv.text.split(/\s+/).filter(Boolean).length} extracted words</p>
+                  <small>We keep your PDF as the uploaded source and use extracted text only for AI analysis.</small>
+                </div>
+                <div className="uploadedCvActions">
+                  <button type="button" onClick={() => setShowExtractedCv((current) => !current)}>
+                    {showExtractedCv ? "Hide Preview" : "Preview Text"}
+                  </button>
+                  <button type="button" onClick={clearUploadedCv}>Remove</button>
+                </div>
+              </div>
+            ) : (
+              <textarea className="largeTextarea" value={oldCv} onChange={(event) => setOldCv(event.target.value)} placeholder="Paste your existing CV here, or upload a PDF file." rows={12} />
+            )}
+            {uploadedCv && showExtractedCv ? (
+              <textarea className="extractedPreview" value={oldCv} onChange={(event) => setOldCv(event.target.value)} rows={8} />
+            ) : null}
           </div>
         </div>
 

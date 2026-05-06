@@ -879,6 +879,75 @@ select:focus {
   display: none;
 }
 
+.uploadedCvCard {
+  display: grid;
+  grid-template-columns: 58px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 168px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbf9;
+  padding: 16px;
+}
+
+.uploadedCvCard strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.uploadedCvCard p {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.uploadedCvCard small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.pdfIcon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 72px;
+  border-radius: 8px;
+  background: #fff1f0;
+  color: #a5221f;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.uploadedCvActions {
+  display: grid;
+  gap: 8px;
+}
+
+.uploadedCvActions button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0 10px;
+  font-weight: 800;
+}
+
+.uploadedCvActions button:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.extractedPreview {
+  min-height: 180px;
+  margin-top: 12px;
+  background: #fbfcfb;
+}
+
 .actionDeck {
   display: grid;
   gap: 14px;
@@ -1110,7 +1179,8 @@ select:focus {
 
   .tailorNav,
   .cardHeader,
-  .savedVersion {
+  .savedVersion,
+  .uploadedCvCard {
     align-items: stretch;
     flex-direction: column;
     grid-template-columns: 1fr;
