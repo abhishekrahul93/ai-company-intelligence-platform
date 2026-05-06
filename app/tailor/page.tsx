@@ -199,9 +199,12 @@ export default function TailorPage() {
     setNotice("");
 
     try {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 30000);
       const formData = new FormData();
       formData.append("file", file);
-      const response = await fetch("/api/import-cv", { method: "POST", body: formData });
+      const response = await fetch("/api/import-cv", { method: "POST", body: formData, signal: controller.signal });
+      window.clearTimeout(timeout);
       const imported = await response.json();
 
       if (!response.ok) {
@@ -211,6 +214,8 @@ export default function TailorPage() {
 
       setOldCv(imported.rawText || [imported.summary, imported.experience, imported.skills].filter(Boolean).join("\n\n"));
       setNotice("CV imported. Choose a CV version, paste the job description, then generate.");
+    } catch (importError) {
+      setError(importError instanceof DOMException && importError.name === "AbortError" ? "CV import took too long. Please try a smaller PDF or upload a DOCX/TXT version." : "Could not upload this CV. Please try again or use DOCX/TXT.");
     } finally {
       setIsImporting(false);
     }

@@ -111,13 +111,17 @@ export default function Home() {
     setImportMessage("");
 
     try {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 30000);
       const formData = new FormData();
       formData.append("file", file);
 
       const response = await fetch("/api/import-cv", {
         method: "POST",
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
+      window.clearTimeout(timeout);
 
       const imported = await response.json();
 
@@ -138,6 +142,8 @@ export default function Home() {
         skills: imported.skills || current.skills
       }));
       setImportMessage("CV imported. Review the fields, then enhance it.");
+    } catch (importError) {
+      setImportMessage(importError instanceof DOMException && importError.name === "AbortError" ? "CV import took too long. Please try a smaller PDF or upload a DOCX/TXT version." : "Could not upload this CV. Please try again or use DOCX/TXT.");
     } finally {
       setIsImporting(false);
     }

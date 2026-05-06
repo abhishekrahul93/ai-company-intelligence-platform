@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import mammoth from "mammoth";
-import { PDFParse } from "pdf-parse";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse/lib/pdf-parse.js") as (buffer: Buffer) => Promise<{ text: string }>;
 
 type ImportedResume = {
   name: string;
@@ -100,13 +103,11 @@ async function extractText(file: File) {
   }
 
   if (name.endsWith(".pdf")) {
-    const parser = new PDFParse({ data: buffer });
-    const result = await parser.getText();
-    await parser.destroy();
+    const result = await pdfParse(buffer);
     return result.text;
   }
 
-  throw new Error("Unsupported file type. Please upload a DOCX or TXT file.");
+  throw new Error("Unsupported file type. Please upload a PDF, DOCX, or TXT file.");
 }
 
 export async function POST(request: Request) {
