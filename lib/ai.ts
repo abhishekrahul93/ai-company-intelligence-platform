@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 export function getOpenAIKey() {
   if (process.env.NODE_ENV === "production") {
-    return process.env.OPENAI_API_KEY?.trim() || "";
+    return process.env.OPENAI_API_KEY?.replace(/\s/g, "") || "";
   }
 
   const envPath = join(process.cwd(), ".env.local");
@@ -12,7 +12,7 @@ export function getOpenAIKey() {
       .split(/\r?\n/)
       .find((item) => item.startsWith("OPENAI_API_KEY="));
 
-    const localKey = line?.replace("OPENAI_API_KEY=", "").trim();
+    const localKey = line?.replace("OPENAI_API_KEY=", "").replace(/\s/g, "");
     if (localKey) {
       return localKey;
     }

@@ -309,11 +309,10 @@ export async function POST(request: Request) {
         warning: "AI response could not be parsed, so a fast ATS analysis was generated. Please try again for a deeper AI rewrite."
       });
     }
-  } catch (error) {
-    const detail = error instanceof Error ? error.message.slice(0, 140) : "Unknown server error";
+  } catch {
     return NextResponse.json({
       ...fallbackTailor({ ...payload, version }),
-      warning: `Generation failed safely (${detail}), so a fast ATS analysis was generated. Please try again for a deeper AI rewrite.`
+      warning: "Generation failed safely, so a fast ATS analysis was generated. Please try again for a deeper AI rewrite."
     });
   }
 }
