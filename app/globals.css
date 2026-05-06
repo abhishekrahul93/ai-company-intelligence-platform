@@ -721,6 +721,35 @@ select:focus {
   gap: 8px;
 }
 
+.exportPrompt {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid #b8d9c8;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f2fbf6, #ffffff);
+  box-shadow: 0 14px 44px rgba(24, 34, 30, 0.08);
+  padding: 20px;
+}
+
+.exportPrompt h2 {
+  margin-bottom: 6px;
+}
+
+.exportPrompt p:not(.eyebrow) {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.exportPromptActions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 8px;
+}
+
 .headingGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1225,6 +1254,11 @@ select:focus {
 
   .scoreModule {
     justify-items: start;
+  }
+
+  .exportPrompt,
+  .exportPromptActions {
+    grid-template-columns: 1fr;
   }
 
   .comparisonPanel > div + div {

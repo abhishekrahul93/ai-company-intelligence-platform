@@ -127,6 +127,74 @@ function exportName(version: CvVersion) {
   return `resume-${slug(version.language)}-${slug(version.format)}.pdf`;
 }
 
+function wordExportName(version: CvVersion) {
+  return exportName(version).replace(/\.pdf$/i, ".doc");
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function listHtml(items: string[]) {
+  const cleanItems = items.filter(Boolean);
+  if (!cleanItems.length) return "";
+  return `<ul>${cleanItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+}
+
+function tailoredCvDocumentHtml(result: TailorResult) {
+  const skills = result.skills.recommended.length ? result.skills.recommended : result.skills.matched;
+  const experience = result.experience
+    .map((item) => {
+      const title = [item.role, item.company].filter(Boolean).join(" · ") || "Experience";
+      return `<div class="experience"><h3>${escapeHtml(title)}</h3>${listHtml(item.rewrittenBullets)}</div>`;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(exportName(result.version).replace(/\.pdf$/i, ""))}</title>
+  <style>
+    body { color: #1f2a24; font-family: Arial, Helvetica, sans-serif; line-height: 1.45; margin: 40px; }
+    header { border-bottom: 3px solid #1f2a24; margin-bottom: 22px; padding-bottom: 16px; }
+    h1 { font-size: 30px; margin: 0 0 6px; }
+    h2 { color: #145f46; font-size: 13px; letter-spacing: 0; margin: 22px 0 8px; text-transform: uppercase; }
+    h3 { font-size: 15px; margin: 14px 0 6px; }
+    p { margin: 0 0 8px; }
+    ul { margin: 0; padding-left: 20px; }
+    li { margin-bottom: 5px; }
+    .meta { color: #1f7a5a; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Abhishek Rahul</h1>
+    <p class="meta">${escapeHtml(result.version.format)} · ${escapeHtml(result.version.targetCountry)} · ${escapeHtml(result.version.language)}</p>
+  </header>
+  <section>
+    <h2>${escapeHtml(result.localizedHeadings.summary)}</h2>
+    <p>${escapeHtml(result.professionalSummary)}</p>
+  </section>
+  <section>
+    <h2>${escapeHtml(result.localizedHeadings.experience)}</h2>
+    ${experience}
+  </section>
+  <section>
+    <h2>${escapeHtml(result.localizedHeadings.skills)}</h2>
+    <p>${escapeHtml(joinList(skills))}</p>
+  </section>
+  ${result.projects.length ? `<section><h2>${escapeHtml(result.localizedHeadings.projects)}</h2>${listHtml(result.projects)}</section>` : ""}
+  ${result.certificationSuggestions.length ? `<section><h2>${escapeHtml(result.localizedHeadings.certifications)}</h2>${listHtml(result.certificationSuggestions)}</section>` : ""}
+</body>
+</html>`;
+}
+
 function draftFromResult(result: TailorResult, jobDescription: string): Partial<ResumeState> {
   return {
     targetJob: jobDescription,
@@ -164,6 +232,7 @@ export default function TailorPage() {
   const [isAgentThinking, setIsAgentThinking] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [showExportPrompt, setShowExportPrompt] = useState(false);
 
   const allBullets = useMemo(() => result?.experience.flatMap((item) => item.rewrittenBullets) || [], [result]);
 
@@ -276,8 +345,11 @@ export default function TailorPage() {
       }
 
       setResult(data);
+      setShowExportPrompt(true);
       if (data.warning) {
         setNotice(data.warning);
+      } else {
+        setNotice("Tailored CV generated. Choose PDF or Word below to download it.");
       }
     } catch (generateError) {
       setError(generateError instanceof DOMException && generateError.name === "AbortError" ? "Generation took too long. Please try again, or shorten the job description/CV text." : "Generation failed. Please check your connection and try again.");
@@ -304,6 +376,19 @@ export default function TailorPage() {
     window.setTimeout(() => {
       document.title = previousTitle;
     }, 250);
+  }
+
+  function downloadTailoredWord() {
+    if (!result) return;
+    const blob = new Blob([tailoredCvDocumentHtml(result)], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = wordExportName(result.version);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   }
 
   function saveCurrentVersion() {
@@ -474,9 +559,25 @@ export default function TailorPage() {
               <div className="scoreActions">
                 <button className="primaryButton" type="button" onClick={applyAll}>Apply Full Tailored CV</button>
                 <button className="secondaryButton" type="button" onClick={printTailoredCv}>Export Tailored PDF</button>
+                <button className="secondaryButton" type="button" onClick={downloadTailoredWord}>Export Word</button>
                 <button className="secondaryButton" type="button" onClick={saveCurrentVersion}>Save Version</button>
               </div>
             </div>
+
+            {showExportPrompt ? (
+              <div className="exportPrompt">
+                <div>
+                  <p className="eyebrow">Ready to download</p>
+                  <h2>Choose your CV file type</h2>
+                  <p>Your tailored CV has been generated. Download a polished PDF, or get a Word file for final manual editing.</p>
+                </div>
+                <div className="exportPromptActions">
+                  <button className="primaryButton" type="button" onClick={printTailoredCv}>Download PDF</button>
+                  <button className="secondaryButton" type="button" onClick={downloadTailoredWord}>Download Word</button>
+                  <button className="secondaryButton" type="button" onClick={() => setShowExportPrompt(false)}>Keep Editing</button>
+                </div>
+              </div>
+            ) : null}
 
             <article className="printableTailoredResume">
               <header>
