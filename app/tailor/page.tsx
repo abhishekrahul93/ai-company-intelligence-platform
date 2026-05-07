@@ -769,6 +769,9 @@ export default function TailorPage() {
               ) : null}
             </article>
 
+            <details className="analysisDetails">
+              <summary>Advanced analysis and editing tools</summary>
+              <div className="analysisGrid">
             <ResultCard title="Localized Headings">
               <div className="headingGrid">
                 {Object.entries(result.localizedHeadings).map(([key, value]) => <span key={key}><small>{key}</small>{value}</span>)}
@@ -805,6 +808,8 @@ export default function TailorPage() {
             <ResultCard title="Improvement Tips"><ul>{result.improvementTips.map((item) => <li key={item}>{item}</li>)}</ul></ResultCard>
 
             <div className="comparisonPanel"><div><p className="eyebrow">Original</p><p>{oldCv.slice(0, 900)}{oldCv.length > 900 ? "..." : ""}</p></div><div><p className="eyebrow">Enhanced</p><p>{result.professionalSummary}</p><ul>{allBullets.slice(0, 5).map((item) => <li key={item}>{item}</li>)}</ul></div></div>
+              </div>
+            </details>
           </section>
         )}
       </section>
