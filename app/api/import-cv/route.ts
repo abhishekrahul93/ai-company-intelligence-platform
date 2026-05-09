@@ -14,8 +14,49 @@ type ImportedResume = {
   summary: string;
   experience: string;
   skills: string;
+  education: string;
+  projects: string;
+  certifications: string;
   rawText: string;
 };
+
+const knownSkills = [
+  "SQL",
+  "Power BI",
+  "Tableau",
+  "Python",
+  "pandas",
+  "NumPy",
+  "scipy",
+  "matplotlib",
+  "R",
+  "Advanced Excel",
+  "Excel",
+  "Google Analytics",
+  "Looker Studio",
+  "LookML",
+  "dbt",
+  "Airflow",
+  "AWS",
+  "Athena",
+  "Glue",
+  "S3",
+  "ETL",
+  "Data Warehousing",
+  "Data Visualization",
+  "Dashboard Development",
+  "A/B Testing",
+  "Hypothesis Testing",
+  "Regression Analysis",
+  "Product Analytics",
+  "Cohort Analysis",
+  "Data Governance",
+  "Stakeholder Communication",
+  "Trino",
+  "Window Functions",
+  "CTEs",
+  "JSON"
+];
 
 function cleanLines(text: string) {
   return text
@@ -51,6 +92,15 @@ function sectionBetween(lines: string[], starts: string[], stops: string[]) {
   return (stopIndex === -1 ? rest : rest.slice(0, stopIndex)).join("\n");
 }
 
+function skillRegex(skill: string) {
+  return new RegExp(`(^|[^a-z0-9])${skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").toLowerCase()}([^a-z0-9]|$)`);
+}
+
+function extractKnownSkills(text: string) {
+  const normalized = text.toLowerCase();
+  return knownSkills.filter((skill) => skillRegex(skill).test(normalized));
+}
+
 function compactForBullets(text: string) {
   return cleanLines(text)
     .filter((line) => line.length > 12)
@@ -60,7 +110,7 @@ function compactForBullets(text: string) {
 
 function parseResumeText(text: string): ImportedResume {
   const lines = cleanLines(text);
-  const lowerStops = ["experience", "employment", "education", "skills", "projects", "certifications", "summary", "profile"];
+  const lowerStops = ["experience", "employment", "education", "skills", "projects", "certifications", "training", "summary", "profile", "languages"];
   const email = findEmail(text);
   const phone = findPhone(text);
   const links = findLinks(text);
@@ -74,7 +124,12 @@ function parseResumeText(text: string): ImportedResume {
   const experience =
     sectionBetween(lines, ["experience", "employment", "work history"], ["education", "skills", "projects", "certifications"]) ||
     lines.slice(5, 16).join("\n");
-  const skills = sectionBetween(lines, ["skills", "technical skills", "core skills"], ["experience", "education", "projects", "certifications"]);
+  const explicitSkills = sectionBetween(lines, ["skills", "technical skills", "core skills"], ["experience", "education", "projects", "certifications", "languages"]);
+  const detectedSkills = extractKnownSkills(text);
+  const skills = Array.from(new Set([...detectedSkills, ...cleanLines(explicitSkills).join(", ").split(",").map((item) => item.trim()).filter(Boolean)])).join(", ");
+  const education = sectionBetween(lines, ["education"], ["certifications", "training", "languages", "skills"]);
+  const projects = sectionBetween(lines, ["projects", "portfolio projects"], ["education", "certifications", "training", "languages", "skills"]);
+  const certifications = sectionBetween(lines, ["certifications", "training"], ["languages", "skills", "education"]);
 
   return {
     name,
@@ -84,7 +139,10 @@ function parseResumeText(text: string): ImportedResume {
     links,
     summary: summary.replace(/\s+/g, " ").trim(),
     experience: compactForBullets(experience),
-    skills: cleanLines(skills).join(", "),
+    skills,
+    education: compactForBullets(education),
+    projects: compactForBullets(projects),
+    certifications: compactForBullets(certifications),
     rawText: text
   };
 }

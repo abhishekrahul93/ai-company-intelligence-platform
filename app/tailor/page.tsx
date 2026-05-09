@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { appliedResumeStorageKey, savedVersionsStorageKey, type ResumeState } from "@/lib/resume";
 
 type CvVersion = {
@@ -10,6 +10,7 @@ type CvVersion = {
   format: string;
   targetCountry: string;
   tone: string;
+  designStyle?: string;
 };
 
 type TailoredExperience = {
@@ -82,7 +83,23 @@ type CandidateProfile = {
 };
 
 const languages = ["English", "German", "French", "Spanish", "Italian", "Dutch", "Arabic", "Hindi"];
-const formats = ["Global ATS Resume", "European CV", "German Lebenslauf", "UK CV", "US Resume", "Executive CV", "Creative CV", "Entry-Level CV"];
+const formats = [
+  "Global ATS Resume",
+  "ATS Classic Resume",
+  "Modern Professional CV",
+  "European CV",
+  "German Lebenslauf",
+  "UK CV",
+  "US Resume",
+  "Executive CV",
+  "Creative CV",
+  "Entry-Level CV",
+  "Tech Resume",
+  "Data Analyst CV",
+  "Academic CV",
+  "One-Page Resume"
+];
+const designStyles = ["ATS Standard", "Modern Clean", "Executive", "European Formal", "Minimalist", "Two-Column", "Compact One-Page", "Creative Professional"];
 const tones = ["Professional", "Modern", "Executive", "Friendly", "Concise"];
 const countries = ["Germany", "Austria", "Switzerland", "United Kingdom", "United States", "Canada", "UAE", "India", "Netherlands", "France", "Spain", "Italy"];
 const enhancerModes = ["ATS-friendly", "More concise", "More executive", "Stronger bullets", "Keyword optimized"];
@@ -103,7 +120,8 @@ const defaultVersion: CvVersion = {
   language: "English",
   format: "Global ATS Resume",
   targetCountry: "United States",
-  tone: "Professional"
+  tone: "Professional",
+  designStyle: "ATS Standard"
 };
 
 function joinList(items: string[]) {
@@ -259,15 +277,55 @@ function tailoredCvDocumentHtml(result: TailorResult, profile: CandidateProfile)
 </html>`;
 }
 
-function draftFromResult(result: TailorResult, jobDescription: string): Partial<ResumeState> {
+function tailoredCvPlainText(result: TailorResult, profile: CandidateProfile) {
+  const contact = [profile.location, profile.email, profile.phone, ...profile.links].filter(Boolean);
+  const skills = confirmedSkills(result);
+  const lines = [
+    profile.name.toUpperCase(),
+    profile.role,
+    contact.join(" | "),
+    profile.workAuthorization,
+    "",
+    result.localizedHeadings.summary.toUpperCase(),
+    result.professionalSummary,
+    "",
+    result.localizedHeadings.experience.toUpperCase(),
+    ...result.experience.flatMap((item) => [
+      [item.role, item.company].filter(Boolean).join(" | ") || "Experience",
+      ...item.rewrittenBullets.map((bullet) => `- ${bullet}`),
+      ""
+    ]),
+    result.localizedHeadings.skills.toUpperCase(),
+    skills.join(", "),
+    "",
+    ...(result.projects.length ? [result.localizedHeadings.projects.toUpperCase(), ...result.projects.map((item) => `- ${item}`), ""] : []),
+    ...(profile.education.length ? [result.localizedHeadings.education.toUpperCase(), ...profile.education.map((item) => `- ${item}`), ""] : []),
+    ...(profile.certifications.length ? [result.localizedHeadings.certifications.toUpperCase(), ...profile.certifications.map((item) => `- ${item}`), ""] : [])
+  ];
+
+  return lines.filter((line, index) => line || lines[index - 1]).join("\n").trim();
+}
+
+function confirmedSkills(result: TailorResult) {
+  const missing = new Set(result.skills.missing.map((item) => item.toLowerCase()));
+  return Array.from(
+    new Set(
+      [...result.skills.matched, ...result.skills.recommended.filter((item) => !missing.has(item.toLowerCase()))]
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function draftFromResult(result: TailorResult, jobDescription: string, profile?: CandidateProfile): Partial<ResumeState> {
   return {
     targetJob: jobDescription,
     summary: result.professionalSummary,
-    skills: joinList(result.skills.recommended.length ? result.skills.recommended : result.skills.matched),
+    skills: joinList(confirmedSkills(result)),
     experience: joinBullets(result.experience.flatMap((item) => item.rewrittenBullets)),
     projects: joinBullets(result.projects),
-    certifications: joinBullets(result.certificationSuggestions),
-    education: joinBullets(result.educationSuggestions),
+    certifications: profile?.certifications.length ? joinBullets(profile.certifications) : undefined,
+    education: profile?.education.length ? joinBullets(profile.education) : undefined,
     versionName: versionName(result.version),
     versionLanguage: result.version.language,
     versionFormat: result.version.format,
@@ -276,6 +334,7 @@ function draftFromResult(result: TailorResult, jobDescription: string): Partial<
 }
 
 export default function TailorPage() {
+  const instantResultRef = useRef<HTMLDivElement | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [oldCv, setOldCv] = useState("");
   const [uploadedCv, setUploadedCv] = useState<UploadedCv | null>(null);
@@ -296,10 +355,10 @@ export default function TailorPage() {
   const [isAgentThinking, setIsAgentThinking] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [showExportPrompt, setShowExportPrompt] = useState(false);
 
   const allBullets = useMemo(() => result?.experience.flatMap((item) => item.rewrittenBullets) || [], [result]);
   const candidateProfile = useMemo(() => candidateFromCv(oldCv, result), [oldCv, result]);
+  const finishedCvText = useMemo(() => (result ? tailoredCvPlainText(result, candidateProfile) : ""), [candidateProfile, result]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(savedVersionsStorageKey);
@@ -410,11 +469,13 @@ export default function TailorPage() {
       }
 
       setResult(data);
-      setShowExportPrompt(true);
+      window.setTimeout(() => {
+        instantResultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
       if (data.warning) {
         setNotice(data.warning);
       } else {
-        setNotice("Tailored CV generated. Choose PDF or Word below to download it.");
+        setNotice("Your finished CV is ready with text, PDF, and Word options.");
       }
     } catch (generateError) {
       setError(generateError instanceof DOMException && generateError.name === "AbortError" ? "Generation took too long. Please try again, or shorten the job description/CV text." : "Generation failed. Please check your connection and try again.");
@@ -430,17 +491,34 @@ export default function TailorPage() {
 
   function applyAll() {
     if (!result) return;
-    applyDraft(draftFromResult(result, jobDescription));
+    applyDraft(draftFromResult(result, jobDescription, candidateProfile));
   }
 
-  function printTailoredCv() {
+  async function downloadTailoredPdf() {
     if (!result) return;
-    const previousTitle = document.title;
-    document.title = exportName(result.version).replace(/\.pdf$/i, "");
-    window.print();
-    window.setTimeout(() => {
-      document.title = previousTitle;
-    }, 250);
+    setNotice("Preparing your PDF download...");
+    const fileName = exportName(result.version);
+    const response = await fetch("/api/export/pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName, result, profile: candidateProfile })
+    });
+
+    if (!response.ok) {
+      setError("Could not create the PDF. Please try again.");
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setNotice("PDF downloaded.");
   }
 
   function downloadTailoredWord() {
@@ -464,7 +542,7 @@ export default function TailorPage() {
       createdAt: new Date().toISOString(),
       version: result.version,
       result,
-      draft: draftFromResult(result, jobDescription)
+      draft: draftFromResult(result, jobDescription, candidateProfile)
     };
     persistVersions([saved, ...savedVersions]);
     setNotice("CV version saved locally.");
@@ -517,7 +595,11 @@ export default function TailorPage() {
             <span className="brandMark">CF</span>
             CareerForge
           </Link>
-          <Link href="/" className="secondaryButton">Resume Builder</Link>
+          <div className="tailorNavActions">
+            <Link href="/" className="secondaryButton">Resume Builder</Link>
+            <Link href="/templates" className="secondaryButton">Templates</Link>
+            <Link href="/dashboard" className="secondaryButton">Dashboard</Link>
+          </div>
         </nav>
         <div className="tailorHeroGrid">
           <div>
@@ -544,6 +626,7 @@ export default function TailorPage() {
           <div className="versionGrid">
             <SelectField label="Target language" value={version.language} options={languages} onChange={(value) => updateVersion("language", value)} />
             <SelectField label="CV format" value={version.format} options={formats} onChange={(value) => updateVersion("format", value)} />
+            <SelectField label="Design style" value={version.designStyle || "ATS Standard"} options={designStyles} onChange={(value) => updateVersion("designStyle", value)} />
             <SelectField label="Tone" value={version.tone} options={tones} onChange={(value) => updateVersion("tone", value)} />
             <SelectField label="Target country" value={version.targetCountry} options={countries} onChange={(value) => updateVersion("targetCountry", value)} />
           </div>
@@ -598,13 +681,36 @@ export default function TailorPage() {
           </div>
           <button className="generateButton" type="button" onClick={() => void generateTailoredCv()} disabled={isGenerating}>{isGenerating ? "Generating tailored CV..." : "Generate Tailored CV"}</button>
           <div className="quickImprove">
-            {["German Lebenslauf", "European CV", "Executive CV", "Entry-Level CV"].map((format) => (
+            {["ATS Classic Resume", "German Lebenslauf", "European CV", "Executive CV", "Tech Resume", "One-Page Resume"].map((format) => (
               <button key={format} type="button" onClick={() => { const next = { ...version, format, language: format === "German Lebenslauf" ? "German" : version.language, targetCountry: format === "German Lebenslauf" ? "Germany" : version.targetCountry }; setVersion(next); void generateTailoredCv(format, next); }} disabled={isGenerating}>Create {format}</button>
             ))}
           </div>
           {error ? <p className="errorBox">{error}</p> : null}
           {notice ? <p className="noticeBox">{notice}</p> : null}
         </div>
+
+        {result ? (
+          <section className="instantCvPanel" ref={instantResultRef} aria-label="Finished generated CV">
+            <div className="instantCvHeader">
+              <div>
+                <p className="eyebrow">Finished CV</p>
+                <h2>Your tailored CV is ready</h2>
+                <p>Review the clean ATS-friendly text, then download PDF or Word immediately.</p>
+              </div>
+              <div className="instantScore">
+                <strong>{result.atsScore}</strong>
+                <span>ATS score</span>
+              </div>
+            </div>
+            <div className="instantActions">
+              <button className="primaryButton" type="button" onClick={() => void downloadTailoredPdf()}>Download PDF</button>
+              <button className="secondaryButton" type="button" onClick={downloadTailoredWord}>Download Word</button>
+              <button className="secondaryButton" type="button" onClick={() => navigator.clipboard.writeText(finishedCvText)}>Copy Text</button>
+              <button className="secondaryButton" type="button" onClick={applyAll}>Apply to Builder</button>
+            </div>
+            <textarea className="finishedCvText" value={finishedCvText} readOnly rows={18} />
+          </section>
+        ) : null}
 
         <SavedVersions versions={savedVersions} onApply={(item) => applyDraft(item.draft)} onPreview={(item) => setResult(item.result)} onRename={renameVersion} onDelete={deleteVersion} />
 
@@ -623,26 +729,11 @@ export default function TailorPage() {
               </div>
               <div className="scoreActions">
                 <button className="primaryButton" type="button" onClick={applyAll}>Apply Full Tailored CV</button>
-                <button className="secondaryButton" type="button" onClick={printTailoredCv}>Export Tailored PDF</button>
+                <button className="secondaryButton" type="button" onClick={() => void downloadTailoredPdf()}>Export Tailored PDF</button>
                 <button className="secondaryButton" type="button" onClick={downloadTailoredWord}>Export Word</button>
                 <button className="secondaryButton" type="button" onClick={saveCurrentVersion}>Save Version</button>
               </div>
             </div>
-
-            {showExportPrompt ? (
-              <div className="exportPrompt">
-                <div>
-                  <p className="eyebrow">Ready to download</p>
-                  <h2>Choose your CV file type</h2>
-                  <p>Your tailored CV has been generated. Download a polished PDF, or get a Word file for final manual editing.</p>
-                </div>
-                <div className="exportPromptActions">
-                  <button className="primaryButton" type="button" onClick={printTailoredCv}>Download PDF</button>
-                  <button className="secondaryButton" type="button" onClick={downloadTailoredWord}>Download Word</button>
-                  <button className="secondaryButton" type="button" onClick={() => setShowExportPrompt(false)}>Keep Editing</button>
-                </div>
-              </div>
-            ) : null}
 
             <section className="tailorFeedbackPanel">
               <div>
@@ -668,7 +759,7 @@ export default function TailorPage() {
               </div>
             </section>
 
-            <article className="printableTailoredResume premiumTailoredResume">
+            <article className={`printableTailoredResume premiumTailoredResume design-${slug(result.version.designStyle || "ats-standard")}`}>
               <header className="resumePrintHeader">
                 <div>
                   <h1>{candidateProfile.name}</h1>

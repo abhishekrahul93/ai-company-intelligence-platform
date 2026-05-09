@@ -6,6 +6,7 @@ type CvVersion = {
   format: string;
   targetCountry: string;
   tone: string;
+  designStyle?: string;
 };
 
 type TailorRequest = {
@@ -55,7 +56,8 @@ const defaultVersion: CvVersion = {
   language: "English",
   format: "Global ATS Resume",
   targetCountry: "United States",
-  tone: "Professional"
+  tone: "Professional",
+  designStyle: "ATS Standard"
 };
 
 const englishHeadings = {
@@ -318,7 +320,7 @@ export async function POST(request: Request) {
           {
             role: "system",
             content:
-              "You are a world-class multilingual resume writer, ATS optimization expert, European CV specialist, German Lebenslauf expert, and career coach.\n\nYou must generate a CV tailored to:\n- Job description\n- Candidate's existing CV\n- Selected language\n- Selected CV format\n- Target country\n- Selected tone\n\nNever invent facts. Translate and localize professionally. Use correct CV conventions for the target country. For German CVs, use professional German business language. For European CVs, use clear formal European CV style. Keep ATS compatibility unless the user selects a creative format.\n\nReturn raw valid JSON only. Do not use markdown fences. Do not add commentary outside JSON."
+              "You are a world-class multilingual resume writer and resume editor with the quality of ChatGPT/Claude-style writing, plus ATS optimization expertise, European CV expertise, German Lebenslauf expertise, and career coaching skill.\n\nYou must generate a finished CV tailored to:\n- Job description\n- Candidate's existing CV\n- Selected language\n- Selected CV format\n- Selected design style\n- Target country\n- Selected tone\n\nWrite in a standard professional resume format: concise headline/profile, ATS-friendly section headings, strong achievement bullets, natural job keywords, no decorative wording, no long paragraphs, and no tables in the content. Never invent facts. Never place missing skills, unverified tools, unverified certifications, unverified degrees, or optional country-specific personal details inside the professional summary, experience bullets, projects, education, or certifications. Put unverified items only in missing, recommended, countrySpecificTips, educationSuggestions, certificationSuggestions, languageSuggestions, improvementTips, or agentSuggestions. Translate and localize professionally. Use correct CV conventions for the target country. For German CVs, use professional German business language. For European CVs, use clear formal European CV style. Keep ATS compatibility unless the user selects a creative format.\n\nReturn raw valid JSON only. Do not use markdown fences. Do not add commentary outside JSON."
           },
           {
             role: "user",
@@ -356,7 +358,9 @@ export async function POST(request: Request) {
                 "Do not invent fake companies, degrees, dates, or experience.",
                 "If information is missing, place it in suggestions, not in the CV content.",
                 "For German CVs use headings Profil, Berufserfahrung, Ausbildung, Fähigkeiten, Projekte, Zertifizierungen, Sprachen.",
-                "Mention photo, date of birth, and nationality only as optional German cultural suggestions."
+                "Mention photo, date of birth, and nationality only as optional German cultural suggestions.",
+                "For ATS Standard and ATS Classic formats, keep content single-column, plain, concise, and recruiter-readable.",
+                "Do not include missing keywords inside the finished CV unless the old CV proves the candidate has that skill."
               ]
             })
           }

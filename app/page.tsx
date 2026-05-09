@@ -11,8 +11,10 @@ import {
   sectionOrderStorageKey,
   type ResumeState
 } from "@/lib/resume";
+import { selectedTemplateStorageKey } from "@/lib/templates";
 
 type BuilderView = "resume" | "cover" | "jobkit";
+type BuilderStep = "upload" | "template" | "improve" | "download";
 type SectionKey = "summary" | "experience" | "skills" | "projects" | "education" | "certifications";
 type Plan = "free" | "pro";
 type Account = {
@@ -42,6 +44,12 @@ const templateDescriptions: Record<string, string> = {
 
 const templates = ["ats", "euro", "executive"] as const;
 const proTemplates = new Set<string>();
+const builderSteps: Array<{ key: BuilderStep; label: string; title: string }> = [
+  { key: "upload", label: "1 Upload", title: "Start with your CV" },
+  { key: "template", label: "2 Template", title: "Choose the best layout" },
+  { key: "improve", label: "3 Improve", title: "Edit and improve content" },
+  { key: "download", label: "4 Download", title: "Export your application" }
+];
 const defaultSectionOrder: SectionKey[] = ["summary", "experience", "skills", "projects", "education", "certifications"];
 const sectionLabels: Record<SectionKey, string> = {
   summary: "Professional Summary",
@@ -140,6 +148,7 @@ export default function Home() {
   const [resume, setResume] = useState(initialResume);
   const [template, setTemplate] = useState<(typeof templates)[number]>("ats");
   const [builderView, setBuilderView] = useState<BuilderView>("resume");
+  const [activeStep, setActiveStep] = useState<BuilderStep>("upload");
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [enhancingSection, setEnhancingSection] = useState<SectionKey | "">("");
   const [isImporting, setIsImporting] = useState(false);
@@ -161,15 +170,20 @@ export default function Home() {
   const coverLetter = useMemo(() => coverLetterFromResume(resume), [resume]);
   const kitInsights = useMemo(() => jobKitInsights(resume), [resume]);
   const jobFeedback = useMemo(() => targetJobFeedback(resume), [resume]);
+  const activeStepTitle = builderSteps.find((step) => step.key === activeStep)?.title || "Build your resume";
 
   useEffect(() => {
     const storedAccount = safeParse<Account | null>(window.localStorage.getItem(accountStorageKey), null);
     const storedResumes = safeParse<SavedResume[]>(window.localStorage.getItem(savedResumesStorageKey), []);
     const storedOrder = normalizeSectionOrder(safeParse<SectionKey[]>(window.localStorage.getItem(sectionOrderStorageKey), defaultSectionOrder));
+    const selectedTemplate = window.localStorage.getItem(selectedTemplateStorageKey);
     queueMicrotask(() => {
       setAccount(storedAccount);
       setSavedResumes(storedResumes);
       setSectionOrder(storedOrder);
+      if (templates.includes(selectedTemplate as (typeof templates)[number])) {
+        setTemplate(selectedTemplate as (typeof templates)[number]);
+      }
     });
 
     const applied = window.localStorage.getItem(appliedResumeStorageKey);
@@ -387,7 +401,10 @@ export default function Home() {
         links: imported.links || current.links,
         summary: imported.summary || current.summary,
         experience: imported.experience || current.experience,
-        skills: imported.skills || current.skills
+        skills: imported.skills || current.skills,
+        education: imported.education || current.education,
+        projects: imported.projects || current.projects,
+        certifications: imported.certifications || current.certifications
       }));
       setImportMessage("CV imported. Review the fields, then enhance it.");
     } catch (importError) {
@@ -503,6 +520,12 @@ export default function Home() {
           <Link className="secondaryButton" href="/tailor">
             AI Tailor
           </Link>
+          <Link className="secondaryButton" href="/templates">
+            Templates
+          </Link>
+          <Link className="secondaryButton" href="/dashboard">
+            Dashboard
+          </Link>
           <button className="primaryButton" type="button" onClick={enhanceResume} disabled={isEnhancing}>
             {isEnhancing ? "Enhancing..." : "Enhance CV"}
           </button>
@@ -513,16 +536,23 @@ export default function Home() {
 
         <section className="simpleFlowPanel" aria-label="Main resume builder flow">
           <p className="eyebrow">Simple workflow</p>
-          <h2>Upload CV, choose a template, improve with AI, then download.</h2>
+          <h2>{activeStepTitle}</h2>
           <div className="simpleFlowSteps">
-            <span>1 Upload</span>
-            <span>2 Template</span>
-            <span>3 Improve</span>
-            <span>4 Download</span>
+            {builderSteps.map((step) => (
+              <button
+                className={activeStep === step.key ? "active" : ""}
+                key={step.key}
+                type="button"
+                onClick={() => setActiveStep(step.key)}
+              >
+                {step.label}
+              </button>
+            ))}
           </div>
+          <p className="helperText">Keep the main flow simple. Advanced account, save, and reorder tools stay tucked away until you need them.</p>
         </section>
 
-        <section className="uploadPanel" aria-label="Import existing CV">
+        <section className={`uploadPanel wizardPanel ${activeStep === "upload" ? "active" : "muted"}`} aria-label="Import existing CV">
           <div>
             <h2>Import Existing CV</h2>
             <p>Upload a PDF, DOCX, or TXT resume to fill the builder automatically.</p>
@@ -542,11 +572,12 @@ export default function Home() {
           {importMessage ? <p className="importMessage">{importMessage}</p> : null}
         </section>
 
-        <section className="templateFocusPanel">
+        <section className={`templateFocusPanel wizardPanel ${activeStep === "template" ? "active" : "muted"}`}>
           <div>
             <p className="eyebrow">Choose Template</p>
             <h2>Three polished resume styles</h2>
           </div>
+          <Link className="templateGalleryLink" href="/templates">Open full template gallery</Link>
           <div className="templateGallery compactTemplateGallery" role="group" aria-label="Choose resume template">
             {templates.map((option) => (
               <button
@@ -562,7 +593,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="jobFeedbackPanel" aria-label="Job description feedback">
+        <section className={`jobFeedbackPanel wizardPanel ${activeStep === "improve" ? "active" : "muted"}`} aria-label="Job description feedback">
           <div className="scorePanelHeader">
             <div>
               <p className="eyebrow">Job Feedback</p>
@@ -579,6 +610,18 @@ export default function Home() {
               <h3>Improve next</h3>
               <ul>{jobFeedback.suggestions.map((item) => <li key={item}>{item}</li>)}</ul>
             </div>
+          </div>
+        </section>
+
+        <section className={`downloadPanel wizardPanel ${activeStep === "download" ? "active" : "muted"}`} aria-label="Download resume">
+          <div>
+            <p className="eyebrow">Ready to download</p>
+            <h2>Export a clean PDF or continue tailoring</h2>
+            <p>Your resume is live on the right. Use PDF when you are ready, or open AI Tailor for a job-specific version.</p>
+          </div>
+          <div className="downloadActions">
+            <button className="primaryButton" type="button" onClick={printResume}>Download PDF</button>
+            <Link className="secondaryButton" href="/tailor">Tailor for a Job</Link>
           </div>
         </section>
 

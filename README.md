@@ -15,6 +15,7 @@ Main routes:
 
 - `/` - resume builder/editor and PDF export
 - `/tailor` - AI CV Tailor & Enhancer, multilingual CV versions, saved versions, and AI Career Agent
+- `/dashboard` - SaaS dashboard for local account state, billing entry, and production integration status
 
 ## AI Setup
 
@@ -22,6 +23,7 @@ Create a `.env.local` file:
 
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 The app calls:
@@ -30,6 +32,10 @@ The app calls:
 - `/api/tailor` to generate job-targeted CV content, ATS score, keyword analysis, suggestions, and cover letter draft
 - `/api/agent` to power the AI Career Agent chat assistant
 - `/api/import-cv` to extract text from PDF, DOCX, or TXT resumes
+- `/api/saas/status` to show OpenAI, Supabase, and Stripe readiness
+- `/api/checkout` to create a Stripe Checkout session when Stripe keys are configured
+- `/api/webhooks/stripe` to receive Stripe billing lifecycle events
+- `/api/resumes` and `/api/cv-versions` to persist user data in Supabase after login
 
 If `OPENAI_API_KEY` is missing, `/api/tailor` returns a clear setup error and safe fallback analysis instead of fabricating content.
 
@@ -44,6 +50,8 @@ npm.cmd run build
 
 - No authentication or database persistence yet.
 - "Apply to Resume" and saved CV versions use browser local storage. The data model is structured so database persistence can be added later.
+- `lib/resume-schema.ts` defines the production structured resume shape for the next database migration.
+- `/dashboard` shows production integration status and a Stripe checkout entry point, but Supabase auth/database and Stripe webhooks still need live keys and tables.
 - PDF export uses the browser print/save-as-PDF flow.
 - Browser print controls the final PDF filename; the app sets a version-aware document title before opening print.
 - AI suggestions are separated from verified resume content when information is missing.
@@ -59,6 +67,29 @@ Deploy to Vercel:
 1. Push this repository to GitHub.
 2. Go to Vercel and import the GitHub repo.
 3. Add `OPENAI_API_KEY` in Vercel project environment variables.
-4. Deploy.
+4. Add these SaaS variables when you are ready for production accounts and payments:
+
+```env
+NEXT_PUBLIC_APP_URL=https://your-vercel-domain.vercel.app
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_PRO_PRICE_ID=your_stripe_subscription_price_id
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+```
+
+5. Deploy.
 
 The GitHub Pages version can stay as a static demo, but the SaaS version should run on Vercel because it needs an API route.
+
+## Supabase Starter Schema
+
+The starter production schema is in `supabase/schema.sql`. It creates:
+
+- `resumes`
+- `cv_versions`
+- `subscriptions`
+- `billing_events`
+
+It also enables row-level security so users can only access their own resumes and CV versions.
