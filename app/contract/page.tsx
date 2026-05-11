@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type RiskLevel = "High" | "Medium" | "Low";
 
@@ -68,13 +68,14 @@ export default function ContractAnalyzerPage() {
   const [analysis, setAnalysis] = useState<ContractAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [message, setMessage] = useState("");
+  const autoSampleStarted = useRef(false);
 
   const allRisks = useMemo(() => {
     if (!analysis) return [];
     return [...analysis.indiaSpecificFlags, ...analysis.risks];
   }, [analysis]);
 
-  async function analyzeContract(sampleKey?: SampleKey) {
+  const analyzeContract = useCallback(async (sampleKey?: SampleKey) => {
     setIsAnalyzing(true);
     setMessage("");
 
@@ -112,7 +113,17 @@ export default function ContractAnalyzerPage() {
     } finally {
       setIsAnalyzing(false);
     }
-  }
+  }, [contractText, file, perspective, tone]);
+
+  useEffect(() => {
+    if (autoSampleStarted.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const sample = params.get("sample");
+    if (sample === "vendor" || sample === "founders" || sample === "service") {
+      autoSampleStarted.current = true;
+      window.setTimeout(() => void analyzeContract(sample), 0);
+    }
+  }, [analyzeContract]);
 
   function shareOnWhatsApp() {
     if (!analysis) return;

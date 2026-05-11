@@ -9,8 +9,14 @@ vercel
 
 chrome-*/
 edge-*/
-chrome-shot.log
 test-shot.png
 clauserisk-linkedin-sample-report.png
 
-.vercel
+_application_images/
+genai-learning/
+tools/
+Abhishek_Rahul_*
+Aroundtown_application_note.txt
+*.docx
+*.pdf
+*.tex
