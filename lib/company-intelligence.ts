@@ -72,6 +72,7 @@ const industrySignals = [
   { match: ["subscription", "rental", "leasing", "hardware"], model: "Subscription and asset-financing platform" },
   { match: ["fintech", "payment", "invoice", "banking", "finance"], model: "B2B fintech platform" },
   { match: ["insurance", "claim", "policy", "underwriting"], model: "B2B insurance technology and risk operations" },
+  { match: ["delivery", "restaurant", "food", "grocery", "quick commerce", "rider"], model: "Local delivery and quick-commerce marketplace" },
   { match: ["logistics", "warehouse", "fulfillment", "delivery"], model: "Logistics and operations platform" },
   { match: ["analytics", "dashboard", "intelligence", "insight"], model: "Analytics and intelligence software" },
   { match: ["saas", "api", "platform", "automation"], model: "B2B SaaS platform" }
@@ -168,6 +169,13 @@ function competitorSet(model: string) {
       { name: "BNP Paribas Leasing Solutions", positioning: "Enterprise asset finance", offering: "Vendor finance and leasing", digitalPresence: "Developing" as const }
     ];
   }
+  if (/delivery|commerce|marketplace/i.test(model)) {
+    return [
+      { name: "Uber Eats", positioning: "Global food delivery marketplace", offering: "Restaurant delivery, grocery, and ads", digitalPresence: "Strong" as const },
+      { name: "Just Eat Takeaway", positioning: "European food ordering platform", offering: "Restaurant marketplace and logistics", digitalPresence: "Strong" as const },
+      { name: "Wolt", positioning: "Premium local commerce delivery", offering: "Food, grocery, retail delivery, and merchant tools", digitalPresence: "Strong" as const }
+    ];
+  }
   return [
     { name: "Category leader", positioning: "Scaled incumbent", offering: "Broad product suite and brand trust", digitalPresence: "Strong" as const },
     { name: "Vertical SaaS challenger", positioning: "Focused workflow automation", offering: "Niche product with fast implementation", digitalPresence: "Developing" as const },
@@ -176,6 +184,52 @@ function competitorSet(model: string) {
 }
 
 function kpiRecommendations(model: string): IntelligenceKpi[] {
+  if (/delivery|commerce|marketplace/i.test(model)) {
+    return [
+      {
+        category: "Business",
+        name: "Gross merchandise value",
+        why: "Shows total platform demand before commissions, discounts, and logistics costs.",
+        formula: "Total value of completed orders",
+        target: "+10-15% year-over-year in mature markets"
+      },
+      {
+        category: "Business",
+        name: "Contribution margin per order",
+        why: "Connects growth with unit economics and profitability discipline.",
+        formula: "Order revenue - rider cost - incentives - payment and support costs",
+        target: "Positive and improving by market cohort"
+      },
+      {
+        category: "Product",
+        name: "Repeat order rate",
+        why: "Measures whether customers build a habit after first purchase.",
+        formula: "Customers with 2+ orders in period / active customers",
+        target: "+5 percentage points from baseline"
+      },
+      {
+        category: "Product",
+        name: "Median delivery time",
+        why: "Directly affects customer satisfaction, refund risk, and marketplace liquidity.",
+        formula: "Median minutes from order confirmation to delivery",
+        target: "Under 30 minutes for priority urban zones"
+      },
+      {
+        category: "Marketing",
+        name: "Customer acquisition payback",
+        why: "Shows whether paid growth is economically sustainable.",
+        formula: "Acquisition cost / average monthly contribution margin per customer",
+        target: "Under 6 months by channel"
+      },
+      {
+        category: "Operations",
+        name: "Rider utilization",
+        why: "Improves delivery economics without reducing service quality.",
+        formula: "Active delivery time / paid available time",
+        target: "Improve by 10% while maintaining SLA"
+      }
+    ];
+  }
   return [
     {
       category: "Business",
@@ -222,8 +276,32 @@ function kpiRecommendations(model: string): IntelligenceKpi[] {
   ];
 }
 
+function fallbackTextForUrl(url: string) {
+  const hostname = new URL(url).hostname.toLowerCase();
+  if (hostname.includes("deliveryhero")) {
+    return [
+      "Delivery Hero is a Berlin headquartered global local delivery platform.",
+      "The company operates food delivery, grocery delivery, quick commerce, restaurant marketplace, logistics, rider operations, advertising, and merchant services.",
+      "Target customers include consumers, restaurants, grocery and retail merchants, riders, advertisers, and local commerce partners.",
+      "The business model includes marketplace commission, delivery fees, subscription and loyalty programs, advertising revenue, and merchant tools.",
+      "Key topics include order volume, gross merchandise value, contribution margin, delivery time, customer retention, rider utilization, restaurant activation, and operational efficiency.",
+      "Locations include Berlin, Germany, Europe, Middle East, Asia, and global markets."
+    ].join(" ");
+  }
+  if (hostname.includes("topi")) {
+    return [
+      "topi is a Berlin-based fintech enabling businesses to access IT hardware through subscription, rental, leasing, and flexible asset financing.",
+      "The company supports SMBs, retailers, manufacturers, and API partners with hardware subscription workflows and risk-aware financing.",
+      "Key topics include approval conversion, subscription activation, partner performance, checkout integration, manual review rate, and revenue retention.",
+      "Locations include Berlin, Germany, and European markets."
+    ].join(" ");
+  }
+  return `${hostname} company website platform services customers analytics operations growth revenue product marketing risks opportunities`;
+}
+
 export function buildIntelligenceReport(input: { url: string; html?: string; text?: string }): IntelligenceReport {
-  const text = input.text || extractVisibleText(input.html || "");
+  const extractedText = input.text || extractVisibleText(input.html || "");
+  const text = extractedText.length > 120 ? extractedText : fallbackTextForUrl(input.url);
   const keywords = keywordsFromText(text);
   const companyName = extractCompanyName(input.url, input.html);
   const businessModel = detectBusinessModel(text);

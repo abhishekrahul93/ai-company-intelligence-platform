@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildIntelligenceReport } from "@/lib/company-intelligence";
+import { buildIntelligenceReport, extractCompanyName } from "@/lib/company-intelligence";
 
 export const runtime = "nodejs";
 
@@ -14,6 +14,11 @@ function normalizeUrl(value: unknown) {
     throw new Error("Only HTTP and HTTPS URLs are supported.");
   }
   return url.toString();
+}
+
+function fallbackHtml(url: string) {
+  const hostname = new URL(url).hostname.replace(/^www\./, "");
+  return `<title>${extractCompanyName(url)}</title><main>${hostname}</main>`;
 }
 
 async function fetchWebsite(url: string) {
@@ -51,7 +56,7 @@ export async function POST(request: Request) {
       html = await fetchWebsite(url);
     } catch (error) {
       fetchWarning = error instanceof Error ? error.message : "Website fetch failed.";
-      html = `<title>${new URL(url).hostname}</title><main>${new URL(url).hostname} company website platform services customers analytics operations growth</main>`;
+      html = fallbackHtml(url);
     }
 
     const report = buildIntelligenceReport({ url, html });
