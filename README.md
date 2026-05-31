@@ -16,6 +16,32 @@ Main routes:
 - `/` - resume builder/editor and PDF export
 - `/tailor` - AI CV Tailor & Enhancer, multilingual CV versions, saved versions, and AI Career Agent
 - `/dashboard` - SaaS dashboard for local account state, billing entry, and production integration status
+- `/company-intelligence` - AI Company Intelligence Platform portfolio project with website analysis, SWOT, KPI recommendations, competitor context, and executive report exports
+
+## Featured Portfolio Project: AI Company Intelligence Platform
+
+The `/company-intelligence` route is a recruiter-facing data and AI portfolio project. It converts a company URL into a structured executive intelligence report with:
+
+- Website analysis and business model detection
+- Product, service, customer, and location extraction
+- SWOT analysis and market gap recommendations
+- Competitor positioning table
+- KPI recommendations across business, product, marketing, and operations
+- Executive dashboard cards and risk indicators
+- HTML export, browser PDF print flow, and presentation outline export
+
+Business impact pitch:
+
+> Reduces first-pass company research from 2-3 hours to approximately 5 minutes by converting public website information into a structured executive brief.
+
+Technical files:
+
+- `app/company-intelligence/page.tsx` - interactive dashboard and export UI
+- `app/api/company-intelligence/analyze/route.ts` - server-side website analyzer API
+- `lib/company-intelligence.ts` - typed report model and intelligence engine
+- `data/company-intelligence-sample-report.json` - sample report data
+- `docs/company-intelligence-architecture.md` - architecture diagram and extension roadmap
+- `docs/company-intelligence-case-study.md` - recruiter-friendly project narrative
 
 ## AI Setup
 

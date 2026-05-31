@@ -3996,3 +3996,329 @@ select:focus {
     width: 100%;
   }
 }
+/* AI Company Intelligence Platform */
+.cip-shell {
+  min-height: 100vh;
+  background: #f6f8fb;
+  color: #132033;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 32px;
+}
+
+.cip-hero,
+.cip-report,
+.cip-architecture {
+  max-width: 1180px;
+  margin: 0 auto 20px;
+  background: #ffffff;
+  border: 1px solid #dfe7f1;
+  border-radius: 8px;
+  box-shadow: 0 18px 44px rgba(22, 34, 51, 0.08);
+}
+
+.cip-hero {
+  min-height: 430px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
+  gap: 28px;
+  align-items: stretch;
+  padding: 34px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.94)),
+    url("https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1800&q=80") center/cover;
+}
+
+.cip-hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cip-eyebrow {
+  margin: 0 0 10px;
+  color: #2f6f73;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.cip-hero h1 {
+  max-width: 780px;
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(2.4rem, 6vw, 4.8rem);
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.cip-hero p {
+  max-width: 760px;
+  color: #405066;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.cip-actions {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 10px;
+  max-width: 680px;
+  margin-top: 14px;
+}
+
+.cip-actions input {
+  min-height: 48px;
+  border: 1px solid #bdcad9;
+  border-radius: 6px;
+  padding: 0 14px;
+  font-size: 1rem;
+  color: #132033;
+  background: #ffffff;
+}
+
+.cip-actions button,
+.cip-export button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 18px;
+  background: #163c4a;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cip-actions button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.cip-status {
+  min-height: 24px;
+  font-size: 0.92rem;
+}
+
+.cip-hero-panel {
+  align-self: center;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid rgba(21, 58, 72, 0.18);
+  border-radius: 8px;
+  padding: 28px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.cip-hero-panel span,
+.cip-card span {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cip-hero-panel strong {
+  color: #2f6f73;
+  font-size: 5rem;
+  line-height: 1;
+}
+
+.cip-grid {
+  max-width: 1180px;
+  margin: 0 auto 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.cip-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cip-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cip-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cip-card {
+  background: #ffffff;
+  border: 1px solid #dfe7f1;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.cip-card strong {
+  display: block;
+  margin: 8px 0;
+  color: #0f172a;
+  font-size: 1.75rem;
+}
+
+.cip-card h3,
+.cip-section h2,
+.cip-report h2,
+.cip-architecture h2 {
+  margin: 0 0 12px;
+  color: #0f172a;
+  letter-spacing: 0;
+}
+
+.cip-card p,
+.cip-card li,
+.cip-report p,
+.cip-kpi p {
+  color: #405066;
+  line-height: 1.5;
+}
+
+.cip-card ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.cip-report {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  align-items: center;
+  padding: 24px;
+}
+
+.cip-export {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cip-export button {
+  min-height: 42px;
+  background: #eef5f5;
+  color: #163c4a;
+  border: 1px solid #cde0df;
+}
+
+.cip-section {
+  max-width: 1180px;
+  margin: 0 auto 20px;
+}
+
+.cip-section-title {
+  margin: 4px 0 14px;
+}
+
+.cip-table {
+  display: grid;
+  gap: 8px;
+}
+
+.cip-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.6fr 0.7fr;
+  gap: 12px;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #dfe7f1;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.cip-row span,
+.cip-row em {
+  color: #405066;
+  font-style: normal;
+}
+
+.cip-kpi {
+  border-top: 1px solid #e8eef6;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.cip-kpi strong {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.cip-kpi small {
+  color: #64748b;
+}
+
+.cip-architecture {
+  padding: 24px;
+}
+
+.cip-flow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.cip-flow span {
+  display: grid;
+  min-height: 78px;
+  place-items: center;
+  border: 1px solid #cde0df;
+  border-radius: 6px;
+  background: #f1f7f7;
+  color: #163c4a;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px;
+}
+
+@media (max-width: 900px) {
+  .cip-shell {
+    padding: 18px;
+  }
+
+  .cip-hero,
+  .cip-report,
+  .cip-actions,
+  .cip-row,
+  .cip-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .cip-metrics,
+  .cip-two,
+  .cip-four {
+    grid-template-columns: 1fr;
+  }
+
+  .cip-hero {
+    min-height: auto;
+    padding: 22px;
+  }
+
+  .cip-hero h1 {
+    font-size: 2.55rem;
+  }
+
+  .cip-hero-panel strong {
+    font-size: 3.6rem;
+  }
+}
+
+@media print {
+  .cip-actions,
+  .cip-export {
+    display: none;
+  }
+
+  .cip-shell {
+    background: #ffffff;
+    padding: 0;
+  }
+
+  .cip-hero,
+  .cip-report,
+  .cip-card,
+  .cip-architecture {
+    box-shadow: none;
+  }
+}

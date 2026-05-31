@@ -1,0 +1,23 @@
+{
+  "companyUrl": "https://www.topi.eu",
+  "companyName": "topi",
+  "businessModel": "Subscription and asset-financing platform",
+  "targetCustomers": [
+    "Small and medium-sized businesses",
+    "Retail partners",
+    "Technical platform partners"
+  ],
+  "products": [
+    "Hardware subscription workflow",
+    "API-first financing platform",
+    "Retail checkout integration"
+  ],
+  "recommendedKpis": [
+    "Qualified pipeline value",
+    "Approval-to-subscription rate",
+    "Time to first approved offer",
+    "Website-to-demo conversion",
+    "Manual review rate"
+  ],
+  "portfolioPositioning": "This sample report demonstrates how public website signals can be transformed into a structured executive intelligence brief for product, strategy, sales, and analytics teams."
+}
