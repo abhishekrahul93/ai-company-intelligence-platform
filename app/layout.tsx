@@ -3,10 +3,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "ClauseRisk India",
-    template: "%s | ClauseRisk India"
+    default: "AI Company Intelligence Platform",
+    template: "%s | AI Company Intelligence Platform"
   },
-  description: "Gemini-powered contract risk review for Indian SMEs"
+  description: "Executive company intelligence reports from company URLs"
 };
 
 export default function RootLayout({
